@@ -1,5 +1,9 @@
+pyagentx3
+
+*.git
 *__pycache__*
 *.log
 .*
+
 ! .gitignore
 ! .vscode
