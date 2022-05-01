@@ -9,6 +9,7 @@
             "type": "python",
             "request": "launch",
             "program": "pySnmpXDaemon.py",
+            "args": ["confSAXD.json"],
             "console": "integratedTerminal",
             "justMyCode": true
         }

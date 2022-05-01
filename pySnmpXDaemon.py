@@ -14,37 +14,20 @@ fh.setFormatter(formatter)
 logger.addHandler(fh)
 
 
+import ulukai
+ulukai.setLog(True)
+
 import json
-import pyagentx3
-import psutil
-
-import sys
-import ipaddress
-import datetime
-
-def loadConf(filePath:str):
-    confData = None
-    confFile = None
-    try:
-        confFile = open(filePath, 'r')
-        confData = json.load(confFile)
-    except Exception as error:
-        logger.error("Failed to get conf from file [{0}]".format(error))
-    finally:
-        if None != confFile:
-            confFile.close()
-    if None != confData:
-        logger.info("Loaded conf file " + filePath)
-    return confData
 
 def main():
-    confData = loadConf("confSAXD.json")
+    confData = ulukai.loadConf("confSAXD.json")
     if None == confData:
         logger.error("failed to open conf File")
-        return 1
+        exit(code=1)
     else:
         logger.debug(json.dumps(confData, indent=2))
     logger.info("coucou")
 
 if __name__ == '__main__':
     main()
+    ulukai.daemonSnmpAgentx()
