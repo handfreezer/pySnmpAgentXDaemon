@@ -1,4 +1,5 @@
 {
+    "socket_path": "/var/run/agentx",
     "log": {
         "level": "info"
     },
@@ -8,10 +9,13 @@
             "oid_ext": "1.2.3",
             "plugin": "process",
             "conf": {
+                "frequency": 5,
                 "list_pids": false,
-                "logical_process": {
-                    "oid_ext": "10",
-                    "regex": "^.*/httpd$"
+                "processes": {
+                    "httpd": {
+                        "oid_ext": "10",
+                        "regex": "^.*/httpd$"
+                    }
                 }
             }
         },
