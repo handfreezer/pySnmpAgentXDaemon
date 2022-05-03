@@ -16,6 +16,7 @@ import ulukai
 import argparse
 import pyagentx3
 
+import re
 import psutil
 import threading
 import json
@@ -80,8 +81,8 @@ class snmpAgentProcess(pyagentx3.Updater):
             for processKey,processConf in self.conf.items():
                 logger.info("%s : %s : %s - %s - %s - %b",
                     self.__class__.__name__, processKey,
-                    processConf["oid"], processConf["key"], processConf["regex"], processConf["list_pids"])
-                if processConf["regex"] in proc_dict[processConf["exe"]]:
+                    processConf["description"], processConf["key"], processConf["regex"], processConf["list_pids"])
+                if re.search(processConf["regex"], proc_dict[processConf["key"]]):
                     oids[processKey].append(proc_dict["pid"])
         for key in oids:
             pidCount = len(oids[key])
