@@ -3,18 +3,19 @@
     "log": {
         "level": "info"
     },
-    "oid_base": "1.3.6.1.4.1.",
+    "oid_base": "1.3.6.1.4.1",
     "agents": {
         "logical_name": {
             "oid_ext": "1.2.3",
             "plugin": "process",
             "conf": {
                 "frequency": 5,
-                "list_pids": false,
                 "processes": {
-                    "httpd": {
-                        "oid_ext": "10",
-                        "regex": "^.*/httpd$"
+                    "10": {
+                        "description": "Apache HTTPD",
+                        "key": "exe",
+                        "regex": "^.*/httpd$",
+                        "list_pids": false
                     }
                 }
             }

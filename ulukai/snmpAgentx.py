@@ -1,6 +1,7 @@
 # -*- coding: utf-8 -*-
 
 # --------------------------------------------
+from array import array
 import logging
 from pyagentx3.updater import Updater
 class NullHandler(logging.Handler):
@@ -11,11 +12,13 @@ logger.addHandler(NullHandler())
 # --------------------------------------------
 
 import ulukai
-import json
 
-import pyagentx3
 import argparse
+import pyagentx3
+
+import psutil
 import threading
+import json
 
 def snmpAgentxDaemon():
     parser = argparse.ArgumentParser(description='Process some integers.')
@@ -40,28 +43,51 @@ def snmpAgentxDaemon():
             agt.stop()
 
 class snmpAgent(pyagentx3.Agent):
-    def __init__(self, confData, agent_id='snmpAgent', socket_path=None):
-        oid_base = confData["oid_base"]
+    def __init__(self, confData, agent_id='snmpAgent'):
+        self._oid_base = confData["oid_base"]
+        self._agents = confData["agents"]
         logger.info("Log level requested : %s", confData["log"]["level"])
         logger.info("Socket path : %s", confData["socket_path"])
-        logger.info("Base OID : %s", oid_base)
-        for agentName,agentConf in confData["agents"].items():
-            logger.info("Agent : %s [plugin=%s on oid_ext=%s]", agentName, agentConf["plugin"], agentConf["oid_ext"])
+        logger.info("Base OID : %s", self._oid_base)
         super().__init__(agent_id, confData["socket_path"]) #socket_path)
 
     def setup(self):
-        #self.register('1.3.6.1.4.1.8072.2.1', NetSnmpTestMibScalar, freq=10, data_store=data)
-        pass
-
+        for agentName,agentConf in self._agents.items():
+            oid_ext = agentConf["oid_ext"]
+            plugin = agentConf["plugin"]
+            conf = agentConf["conf"]
+            logger.info("Agent : %s [plugin=%s on oid_ext=%s]", agentName, plugin, oid_ext)
+            if "process" == plugin :
+                frequency = conf["frequency"]
+                logger.info("registering process plugin...")
+                self.register(self._oid_base + "." + oid_ext,
+                    snmpAgentProcess,
+                    freq=frequency,
+                    data_store=conf["processes"])
+                logger.info(">registered")
 
 class snmpAgentProcess(pyagentx3.Updater):
-    def __init__(self, conf):
+    def __init__(self, data_store=None):
         pyagentx3.Updater.__init__(self)
-        self._listPIDs = conf["list_pids"]
-        self._processes2Watch = conf["processes"]
+        self.conf = data_store
 
     def update(self):
-        for processKey,processConf in self._processes2Watch.items():
-            logger.info("%s : %s : %s - %s",
-                self.__class__.__name__, processKey,
-                processConf["oid"], processConf["regex"])
+        oids = dict()
+        for key in self.conf:
+            oids[key] = []
+        for proc in psutil.process_iter():
+            proc_dict = proc.as_dict()
+            for processKey,processConf in self.conf.items():
+                logger.info("%s : %s : %s - %s - %s - %b",
+                    self.__class__.__name__, processKey,
+                    processConf["oid"], processConf["key"], processConf["regex"], processConf["list_pids"])
+                if processConf["regex"] in proc_dict[processConf["exe"]]:
+                    oids[processKey].append(proc_dict["pid"])
+        for key in oids:
+            pidCount = len(oids[key])
+            self.set_INTEGER(self.conf[key]["oid"] + ".0",
+                pidCount)
+            if True == self.conf[key]["list_pids"]:
+                for i in range(pidCount):
+                    self.set_INTEGER(self.conf[key]["oid"] + "." + str(i+1),
+                        oids[key][i])
