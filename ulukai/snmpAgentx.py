@@ -2,6 +2,7 @@
 
 # --------------------------------------------
 from array import array
+import fileinput
 import logging
 from pyagentx3.updater import Updater
 class NullHandler(logging.Handler):
@@ -18,6 +19,7 @@ import pyagentx3
 
 import re
 import psutil
+import os
 import threading
 import json
 
@@ -79,7 +81,7 @@ class snmpAgentProcess(pyagentx3.Updater):
         for proc in psutil.process_iter():
             proc_dict = proc.as_dict()
             for processKey,processConf in self.conf.items():
-                logger.info("%s : %s : %s - %s - %s - %b",
+                logger.info("%s : %s : %s - %s - %s - %r",
                     self.__class__.__name__, processKey,
                     processConf["description"], processConf["key"], processConf["regex"], processConf["list_pids"])
                 if re.search(processConf["regex"], proc_dict[processConf["key"]]):
@@ -92,3 +94,58 @@ class snmpAgentProcess(pyagentx3.Updater):
                 for i in range(pidCount):
                     self.set_INTEGER(self.conf[key]["oid"] + "." + str(i+1),
                         oids[key][i])
+
+class snmpAgentTail(pyagentx3.Updater):
+    def __init__(self, data_store=None):
+        pyagentx3.Updater.__init__(self)
+        self.conf = data_store
+        self.filePath = self.conf["filePath"]
+        self.regex = self.conf["regex"]
+
+    def run(self):
+        fileFD = None
+        fileIno = None
+        while not self.stop.is_set():
+            try:
+                if fileFD is None:
+                    fileFD = open(self.filePath, 'r')
+                    fileIno = os.fstat(fileFD.fileno()).st_ino
+                    fileFD.seek(0,os.SEEK_END)
+                    logger.info("%s : opened file [%s]",
+                        __class__.__name__, self.filePath)
+            except IOError:
+                fileFD = None
+                fileIno = None
+                logger.warning("%s : failed to open file [%s]",
+                    __class__.__name__, self.filePath)
+            if None == fileFD:
+                self.stop.wait(5)
+            else:
+                where = fileFD.tell()
+                line = fileFD.readline()
+                if not line:
+                    try:
+                        if os.stat(self.filePath).st_ino != fileIno:
+                            fileFD.close()
+                            fileFD = None
+                        else:
+                            fileFD.seek(where)
+                    except OSError:
+                            fileFD.close()
+                            fileFD = None
+                else:
+                    match = re.search(self.regex, line)
+                    if match :
+                        self.last_result = match.groups()
+                        self.run_update()
+        if None != fileFD:
+            fileFD.close()
+            fileFD = None
+            fileIno = None     
+
+    def update(self):
+        i = 0
+        for value in self.last_result:
+            i += 1
+            self.set_OCTETSTRING(str(i), value)
+        self.set_INTEGER("0", i)
