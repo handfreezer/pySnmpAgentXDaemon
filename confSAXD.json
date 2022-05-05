@@ -31,7 +31,8 @@
             "plugin": "tailStat",
             "conf": {
                 "filePath": "/tmp/file2tailForStat",
-                "regex": "^.*:([0-9]*):.*:([0-9]*):.*$"
+                "regex": "^.*:([0-9]*):.*:([0-9]*):.*$",
+		"groupType": ["int","string"]
             }
         }
     }

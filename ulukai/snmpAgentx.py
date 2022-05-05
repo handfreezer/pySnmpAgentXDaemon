@@ -136,7 +136,10 @@ class snmpAgentTail(pyagentx3.Updater):
         i = 0
         for value in self.last_result:
             i += 1
-            self.set_OCTETSTRING(str(i), value)
+            if "int" == self.conf["groupType"][i-1]:
+                self.set_INTEGER(str(i), int(value))
+            elif "string" == self.conf["groupType"][i-1]:
+                self.set_OCTETSTRING(str(i), str(value))
         self.set_INTEGER("0", i)
 
 class snmpAgentProcess(pyagentx3.Updater):
