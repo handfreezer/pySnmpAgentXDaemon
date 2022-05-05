@@ -4,7 +4,6 @@
 from array import array
 import fileinput
 import logging
-from pyagentx3.updater import Updater
 class NullHandler(logging.Handler):
     def emit(self, record):
         pass
@@ -21,8 +20,6 @@ import re
 import psutil
 import os
 import time
-import threading
-import json
 
 def snmpAgentxDaemon():
     parser = argparse.ArgumentParser(description='Process some integers.')
