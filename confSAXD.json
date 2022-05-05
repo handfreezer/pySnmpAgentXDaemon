@@ -1,5 +1,5 @@
 {
-    "socket_path": "/var/run/agentx",
+    "socket_path": "/tmp/agentx",
     "log": {
         "level": "info"
     },
@@ -9,12 +9,18 @@
             "oid_ext": "1.2.3",
             "plugin": "process",
             "conf": {
-                "frequency": 5,
+                "frequency": 30,
                 "processes": {
                     "10": {
                         "description": "Apache HTTPD",
                         "key": "exe",
                         "regex": "^.*/httpd$",
+                        "list_pids": false
+                    },
+                    "20": {
+                        "description": "Docker",
+                        "key": "name",
+                        "regex": "^.*docker.*$",
                         "list_pids": false
                     }
                 }
@@ -25,7 +31,7 @@
             "plugin": "tailStat",
             "conf": {
                 "filePath": "/tmp/file2tailForStat",
-                "regex": "^.:([[digit]]*):.*:([[digit]]*):.*$"
+                "regex": "^.*:([0-9]*):.*:([0-9]*):.*$"
             }
         }
     }
